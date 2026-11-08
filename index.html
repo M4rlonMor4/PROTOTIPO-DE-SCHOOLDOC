@@ -179,7 +179,7 @@ canvas#pad{display:block;width:100%;height:170px;border:2px dashed var(--muted);
   <form id="newForm" class="form" novalidate>
    <div class="f full" id="nTitle"><label for="title">Título del documento</label><input id="title" placeholder="Contrato 2026 – Nombre del estudiante"><div class="err">Escribe un título.</div></div>
    <div class="f"><label for="tpl">Plantilla</label><select id="tpl"><option>Contrato de matrícula – Colegio</option><option>Contrato de matrícula – Preescolar</option></select></div>
-   <div class="f"><label>&nbsp;</label><label class="switch"><input type="checkbox" id="two"> Firman dos acudientes</label></div>
+   <div class="f" style="align-self:end"><label class="switch" style="min-height:40px"><input type="checkbox" id="two"> Firman dos acudientes</label></div>
    <h3 class="full" style="margin-bottom:0">Datos de la secretaría</h3>
    <div class="f" id="nMat"><label for="mat">Valor de la matrícula</label><input id="mat" inputmode="numeric" placeholder="$ 850.000"><div class="err">Escribe el valor.</div></div>
    <div class="f" id="nPen"><label for="pen">Valor de la pensión mensual</label><input id="pen" inputmode="numeric" placeholder="$ 720.000"><div class="err">Escribe el valor.</div></div>
@@ -281,7 +281,7 @@ canvas#pad{display:block;width:100%;height:170px;border:2px dashed var(--muted);
   <h2>Escribe tu código</h2><p class="lead" style="margin-bottom:8px" id="codeMsg"></p>
   <div class="codeboxes" id="codeBoxes"></div>
   <div class="f" id="fCode" style="margin:0"><div class="err" id="codeErr">El código no es correcto. Revisa el correo.</div></div>
-  <div class="row" style="margin-top:12px"><button class="btn" type="submit">Continuar</button><button class="btn ghost small" type="button" id="resend">Reenviar código</button></div>
+  <div class="row" style="margin-top:12px"><button class="btn" type="submit">Continuar</button><button class="btn ghost small" type="button" id="resend">Reenviar código</button><button class="btn ghost small" type="button" data-go="login">Salir</button></div>
   <p class="lead" style="margin:12px 0 0;font-size:12.5px">Demo: el código es <span class="mono">123456</span>. Vence a los pocos minutos y tiene intentos limitados.</p>
  </form></div>
 </section>
@@ -323,7 +323,7 @@ canvas#pad{display:block;width:100%;height:170px;border:2px dashed var(--muted);
   <div class="pad-wrap"><canvas id="pad" aria-label="Espacio para firmar"></canvas><div class="pad-hint" id="padHint">Firma aquí</div></div>
   <div class="row between" style="margin-top:8px"><span class="lead" style="margin:0;font-size:12.5px">Puedes borrar y firmar de nuevo.</span><button type="button" class="btn ghost small" id="padClear">Borrar firma</button></div>
   <div class="photo"><div class="avatar" id="phPrev">Foto</div><div><label for="phIn" style="font-size:13px;font-weight:600">Foto del firmante (opcional)</label><br><input id="phIn" type="file" accept="image/*" capture="user"></div></div>
-  <div class="row"><button class="btn sign" id="signBtn" disabled>Firmar y finalizar</button><button class="btn ghost" id="rejBtn">No estoy de acuerdo</button></div>
+  <div class="row"><button class="btn sign" id="signBtn" disabled>Firmar y finalizar</button><button class="btn ghost" id="rejBtn">No estoy de acuerdo</button><button class="btn ghost" data-go="portal-revisar">Volver a revisar</button></div>
  </div></div>
 </section>
 
