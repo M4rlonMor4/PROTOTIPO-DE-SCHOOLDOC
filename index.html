@@ -558,6 +558,7 @@ function preview(d){$('#sheet').innerHTML='<div class="doc" style="max-height:no
  $('#modal').classList.add('on');$('#cl').onclick=function(){$('#modal').classList.remove('on')}}
 $('#modal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('on')});
 window.addEventListener('resize',function(){if($('#portal-firma').classList.contains('on')&&!signed)sizePad()});
+if(/[?&]shot/.test(location.search)){var sh=document.createElement('style');sh.textContent='.proto-bar,.maps{display:none!important}body{padding-top:16px}';document.head.appendChild(sh)}
 var st=location.hash.slice(1);go($('#'+st)&&$('#'+st).classList.contains('screen')?st:'login');
 })();
 </script>
