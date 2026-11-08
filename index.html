@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>School-Docs · Prototipo navegable</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Marco de prototipo (barra + mapa de pantallas) alrededor de la interfaz real de School-Docs. Azul de marca #0051d5 (color por defecto del colegio). */
+:root{
+  --bg:#EEF1F6;--surface:#fff;--surface2:#F6F8FB;--ink:#14223A;--muted:#566580;--line:#D6DDE8;
+  --btn:#0051D5;--btn-ink:#fff;--accent:#E3A82B;--accent-ink:#2B1D00;
+  --ok:#17693F;--ok-bg:#DFF1E7;--warn:#8A5600;--warn-bg:#FFEFCB;--bad:#A8231B;--bad-bg:#FBE3E0;--info:#0A3E9B;--info-bg:#DEE9FD;
+  --side:#10203A;--side-ink:#D5E0F2;--focus:#2F6FD6;
+  --font:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'IBM Plex Mono',ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1320;--surface:#152033;--surface2:#1B2940;--ink:#E7EDF7;--muted:#9BAAC2;--line:#2B3C58;
+  --btn:#5B93F2;--btn-ink:#08142A;--accent:#E8B53F;--ok:#6FD3A0;--ok-bg:#12382A;--warn:#F2C26B;--warn-bg:#3B2C0C;--bad:#FF9D94;--bad-bg:#431A17;--info:#9DC0FF;--info-bg:#142B55;
+  --side:#0A101C;--side-ink:#C9D6EA;--focus:#8DB4F5;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;padding:0 16px 40px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto}
+.proto-bar{padding:16px 0 8px}.proto-bar h1{font-size:17px;margin:0;font-weight:700}.proto-bar p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.maps{display:grid;gap:6px;padding:6px 0 12px}
+.maprow{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:thin;padding-bottom:3px}
+.maprow>span{flex:0 0 auto;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;min-width:96px}
+.maprow button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.maprow button[aria-current="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:580px}
+.screen{display:none}.screen.on{display:block}
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:580px}
+.side{background:var(--side);color:var(--side-ink);padding:16px 10px;display:flex;flex-direction:column;gap:3px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;color:#fff;padding:2px 8px 14px;font-size:16px}
+.brand i{width:26px;height:26px;border-radius:6px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font-style:normal;font-weight:800;font-size:13px}
+.side a{display:block;padding:8px 10px;border-radius:6px;color:inherit;font-size:14px;cursor:pointer}
+.side a:hover{background:rgba(255,255,255,.08)}.side a[aria-current="page"]{background:rgba(255,255,255,.15);color:#fff;font-weight:600}
+.side .sep{height:1px;background:rgba(255,255,255,.14);margin:8px 4px}
+.side .who{margin-top:auto;display:flex;gap:9px;align-items:center;font-size:12.5px;padding:10px 6px 0;border-top:1px solid rgba(255,255,255,.14)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;overflow:hidden;flex:0 0 auto}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.main{padding:22px 26px;min-width:0}
+.main h2{font-size:21px;margin:0 0 3px;letter-spacing:-.01em}.lead{color:var(--muted);margin:0 0 18px;font-size:14px}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 8px;font-weight:600}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--surface2)}
+.stat small{display:block;color:var(--muted);font-size:12.5px}.stat strong{font-size:26px;font-variant-numeric:tabular-nums}
+.panel{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:var(--surface)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.row.between{justify-content:space-between}
+.btn{border:0;background:var(--btn);color:var(--btn-ink);padding:9px 15px;border-radius:7px;font-weight:600;cursor:pointer;font-size:14px}
+.btn:hover{filter:brightness(1.08)}.btn.sign{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}.btn.danger{background:var(--bad);color:#fff}
+.btn.small{padding:5px 10px;font-size:12.5px}.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--surface2);padding:8px 12px;white-space:nowrap}
+td{padding:9px 12px;border-top:1px solid var(--line);white-space:nowrap}
+.mono{font-family:var(--mono);font-size:12.5px}tr.click{cursor:pointer}tr.click:hover td{background:var(--surface2)}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:600}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.off{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}.pill.info{background:var(--info-bg);color:var(--info)}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;max-width:780px}.form .full{grid-column:1/-1}
+.f label{display:block;font-size:13px;font-weight:600;margin-bottom:3px}
+.f input,.f select,.f textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:var(--surface);min-height:40px}
+.f input[type=color]{padding:2px;height:40px}.f input[readonly]{background:var(--surface2);color:var(--muted)}
+.f small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.f .err{display:none;color:var(--bad);font-size:12.5px;margin-top:3px}.f.bad input,.f.bad select,.f.bad textarea{border-color:var(--bad)}.f.bad .err{display:block}
+.search{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.search input,.search select{padding:8px 11px;border:1px solid var(--line);border-radius:7px;background:var(--surface);min-height:38px}.search input{flex:1 1 220px}
+.note{background:var(--info-bg);color:var(--info);border-radius:7px;padding:9px 12px;font-size:13.5px}
+.note.warn{background:var(--warn-bg);color:var(--warn)}.note.ok{background:var(--ok-bg);color:var(--ok)}
+.switch{display:flex;gap:9px;align-items:center;font-size:14px}.switch input{width:18px;height:18px}
+dl{display:grid;grid-template-columns:140px minmax(0,1fr);gap:6px 14px;margin:0 0 14px}dt{color:var(--muted);font-size:13px}dd{margin:0;font-weight:500}
+.timeline{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.timeline li{display:grid;grid-template-columns:12px minmax(0,1fr);gap:10px;font-size:13.5px}
+.timeline li::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--btn);margin-top:5px}
+.timeline small{color:var(--muted);display:block;font-family:var(--mono);font-size:11.5px}
+.bars{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:6px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%;font-size:11.5px;color:var(--muted)}
+.bars i{display:block;width:100%;background:var(--btn);border-radius:4px 4px 0 0;min-height:3px}
+.center{display:grid;place-items:center;padding:34px 16px;min-height:580px;background:var(--surface2)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;width:100%;max-width:410px}
+.card.wide{max-width:600px}.card h2{margin:0 0 3px;font-size:20px}.card .f{margin-bottom:11px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center;font-size:12.5px;color:var(--muted)}
+.chips button{border:1px dashed var(--line);background:transparent;border-radius:99px;padding:4px 10px;font-size:12.5px;cursor:pointer}
+.chips button[aria-pressed="true"]{border-style:solid;border-color:var(--btn);color:var(--btn);font-weight:600}
+.steps{display:flex;gap:6px;margin:0 0 16px;font-size:12px;color:var(--muted)}
+.steps span{flex:1;border-top:3px solid var(--line);padding-top:4px}.steps span.on{border-color:var(--accent);color:var(--ink);font-weight:600}.steps span.done{border-color:var(--ok)}
+.codeboxes{display:flex;gap:8px;margin:6px 0 4px}.codeboxes input{width:100%;min-width:0;text-align:center;font-size:22px;font-family:var(--mono);padding:10px 0;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.doc{background:#fff;color:#111;border:1px solid var(--line);border-radius:6px;padding:20px 24px;font-size:12px;line-height:1.5;max-height:300px;overflow:auto;font-family:'Public Sans',sans-serif}
+.doc h4{text-align:center;margin:0 0 2px;font-size:13px}.doc .sub{text-align:center;margin:0 0 10px;color:#444}.doc p{margin:0 0 7px;text-align:justify}
+.doc .v{background:#FFF1BF;padding:0 3px;border-radius:2px}.doc .sg{display:inline-block;min-width:120px;border-bottom:1px solid #111;height:34px;vertical-align:bottom}.doc .sg img{height:34px}
+canvas#pad{display:block;width:100%;height:170px;border:2px dashed var(--muted);border-radius:8px;background:#fff;touch-action:none;cursor:crosshair}
+.pad-wrap{position:relative}.pad-hint{position:absolute;inset:0;display:grid;place-items:center;color:#8693A8;pointer-events:none;font-size:14px}
+.check{display:flex;gap:9px;align-items:flex-start;margin:12px 0;font-size:13.5px}.check input{margin-top:3px;width:18px;height:18px}
+.photo{display:flex;gap:12px;align-items:center;margin:12px 0}.photo .avatar{width:54px;height:54px;background:var(--surface2);color:var(--muted);border:1px dashed var(--line)}
+/* editor de plantillas */
+.editor{display:grid;grid-template-columns:150px minmax(0,1fr) 220px;gap:14px;align-items:start}
+.pal{display:grid;gap:6px}.pal button{text-align:left}
+.pagewrap{overflow:auto;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px;max-height:560px}
+.page{position:relative;width:459px;height:594px;background:#fff;margin:0 auto;box-shadow:0 1px 6px rgba(0,0,0,.18);transform-origin:top left}
+.fld{position:absolute;border:1px dashed transparent;font-size:8px;line-height:1.25;color:#111;cursor:move;overflow:hidden;padding:1px 2px;user-select:none;touch-action:none}
+.fld:hover{border-color:#7AA2E8}.fld.sel{border:1px solid #0051D5;background:rgba(0,81,213,.07)}
+.fld.var{background:#FFF1BF;font-family:var(--mono)}.fld.sig{border:1px dashed #666;background:#FAFAFA;color:#555;display:flex;align-items:flex-end;justify-content:center}
+.fld.shp{background:#222;padding:0}.fld.img{background:#E4EAF3;color:#51607A;display:grid;place-items:center}
+.props .f{margin-bottom:8px}.props input[type=number]{min-height:32px;padding:5px 8px}
+.minipad{width:100%;height:90px;border:2px dashed var(--muted);border-radius:8px;background:#fff;touch-action:none;display:block}
+.sigprev{height:60px;background:#fff;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;margin:8px 0}
+.modal{position:fixed;inset:0;background:rgba(8,14,26,.6);display:none;place-items:center;padding:16px;z-index:50}.modal.on{display:grid}
+.sheet{background:var(--surface);color:var(--ink);max-width:640px;width:100%;max-height:90vh;overflow:auto;border-radius:10px;padding:22px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;display:none;z-index:60;max-width:calc(100% - 32px)}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px}.brand{padding:0 8px 0 0}.side .who,.side .sep{display:none}
+  .main{padding:16px}.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.form{grid-template-columns:1fr}.editor{grid-template-columns:1fr}
+  dl{grid-template-columns:1fr;gap:2px}dt{margin-top:6px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="proto-bar"><h1>School-Docs · Prototipo navegable</h1>
+<p>Refleja el sistema como está construido: panel del colegio por roles, plantillas con editor de lienzo, firmantes institucionales, portal del acudiente con código por correo y trazabilidad. Datos de ejemplo, sin servidor.</p></header>
+<nav class="maps" id="maps" aria-label="Mapa de pantallas"></nav>
+<main class="stage">
+
+<!-- ============ ACCESO ============ -->
+<section class="screen on" id="login" data-title="Inicio de sesión" data-group="Acceso">
+ <div class="center"><form class="card" id="loginForm" novalidate>
+  <div class="brand" style="color:var(--ink);padding-left:0"><i>SD</i> School-Docs</div>
+  <h2>Ingresar</h2><p class="lead" style="margin-bottom:14px">Colegio Piloto · panel administrativo</p>
+  <div class="f" id="fEmail"><label for="email">Correo electrónico</label><input id="email" type="email" value="secretaria@colegiopiloto.edu.co" autocomplete="username"><div class="err">Escribe un correo válido.</div></div>
+  <div class="f" id="fPass"><label for="pass">Contraseña</label><input id="pass" type="password" value="demo-clave-123" autocomplete="current-password"><div class="err">La contraseña es obligatoria.</div></div>
+  <button class="btn" style="width:100%" type="submit">Ingresar</button>
+  <div class="chips">Entrar como (demo):
+   <button type="button" data-role="sec" aria-pressed="true">Secretaría</button><button type="button" data-role="rec" aria-pressed="false">Rector</button>
+   <button type="button" data-role="adm" aria-pressed="false">Administrador</button><button type="button" data-role="plt" aria-pressed="false">Plataforma</button></div>
+  <div class="chips"><button type="button" data-go="cambio">Cuenta nueva con clave temporal</button><button type="button" data-go="portal-codigo" data-doc="pending">Soy acudiente: abrir mi enlace</button></div>
+ </form></div>
+</section>
+
+<section class="screen" id="cambio" data-title="Cambio obligatorio de clave" data-group="Acceso">
+ <div class="center"><form class="card" id="pwForced" novalidate>
+  <div class="brand" style="color:var(--ink);padding-left:0"><i>SD</i> School-Docs</div>
+  <h2>Cambia tu contraseña</h2><p class="lead">El administrador creó tu cuenta con una clave temporal. Hasta que la cambies, solo puedes hacer esto.</p>
+  <div class="f" data-f="a"><label for="pwA">Contraseña temporal</label><input id="pwA" type="password"><div class="err">Escribe la clave temporal.</div></div>
+  <div class="f" data-f="b"><label for="pwB">Nueva contraseña</label><input id="pwB" type="password"><small>Mínimo 10 caracteres, no tan común ni parecida a tus datos.</small><div class="err">Usa al menos 10 caracteres.</div></div>
+  <div class="f" data-f="c"><label for="pwC">Repite la nueva contraseña</label><input id="pwC" type="password"><div class="err">Las contraseñas no coinciden.</div></div>
+  <button class="btn" style="width:100%" type="submit">Guardar y continuar</button>
+ </form></div>
+</section>
+
+<!-- ============ PANEL ============ -->
+<section class="screen" id="inicio" data-title="Inicio" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="inicio"></nav><div class="main">
+  <div class="row between"><div><h2>Inicio</h2><p class="lead">Resumen del colegio y actividad de la semana.</p></div><button class="btn" data-go="nuevo" data-need="sec,adm">+ Nuevo documento</button></div>
+  <div class="grid4" id="stats"></div>
+  <div class="grid2"><div class="panel"><h3 style="margin-top:0">Firmas por día (semana)</h3><div class="bars" id="weekBars"></div></div>
+   <div class="panel"><h3 style="margin-top:0">Documentos recientes</h3><ul class="timeline" id="recent"></ul></div></div>
+ </div></div>
+</section>
+
+<section class="screen" id="documentos" data-title="Documentos" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="documentos"></nav><div class="main">
+  <div class="row between"><div><h2>Documentos</h2><p class="lead">Contratos creados a partir de las plantillas del colegio.</p></div><button class="btn" data-go="nuevo" data-need="sec,adm">+ Nuevo documento</button></div>
+  <div class="search"><input id="q" placeholder="Buscar por título o nombre del estudiante" aria-label="Buscar">
+   <select id="fs" aria-label="Estado"><option value="">Todos los estados</option><option value="draft">Borrador</option><option value="pending_signatures">Pendiente de firmas</option><option value="completed">Completado</option><option value="rejected">Rechazado</option><option value="cancelled">Cancelado</option></select>
+   <select id="ft" aria-label="Plantilla"><option value="">Todas las plantillas</option><option>Colegio</option><option>Preescolar</option></select></div>
+  <div class="tablebox"><table><thead><tr><th>#</th><th>Título</th><th>Plantilla</th><th>Estado</th><th>Firmas</th><th>Creado</th></tr></thead><tbody id="dlist"></tbody></table></div>
+  <p id="dempty" class="lead" style="display:none;margin-top:12px">No hay documentos con esos filtros.</p>
+ </div></div>
+</section>
+
+<section class="screen" id="nuevo" data-title="Nuevo documento" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="nuevo"></nav><div class="main">
+  <h2>Nuevo documento</h2><p class="lead">La secretaría llena lo que le corresponde. El acudiente completa el resto desde el portal.</p>
+  <form id="newForm" class="form" novalidate>
+   <div class="f full" id="nTitle"><label for="title">Título del documento</label><input id="title" placeholder="Contrato 2026 – Nombre del estudiante"><div class="err">Escribe un título.</div></div>
+   <div class="f"><label for="tpl">Plantilla</label><select id="tpl"><option>Contrato de matrícula – Colegio</option><option>Contrato de matrícula – Preescolar</option></select></div>
+   <div class="f"><label>&nbsp;</label><label class="switch"><input type="checkbox" id="two"> Firman dos acudientes</label></div>
+   <h3 class="full" style="margin-bottom:0">Datos de la secretaría</h3>
+   <div class="f" id="nMat"><label for="mat">Valor de la matrícula</label><input id="mat" inputmode="numeric" placeholder="$ 850.000"><div class="err">Escribe el valor.</div></div>
+   <div class="f" id="nPen"><label for="pen">Valor de la pensión mensual</label><input id="pen" inputmode="numeric" placeholder="$ 720.000"><div class="err">Escribe el valor.</div></div>
+   <h3 class="full" style="margin-bottom:0">Enlace de firma</h3>
+   <div class="f" id="nM1"><label for="m1">Correo del acudiente 1</label><input id="m1" type="email"><small>Recibe un enlace de un solo uso y un código de 6 dígitos.</small><div class="err">Escribe un correo válido.</div></div>
+   <div class="f" id="nM2" style="display:none"><label for="m2">Correo del acudiente 2</label><input id="m2" type="email"><div class="err">Escribe un correo válido.</div></div>
+   <div class="full row"><button class="btn" type="submit" id="sendBtn">Enviar a firma</button><button class="btn ghost" type="button" id="draftBtn">Guardar borrador</button><button class="btn ghost small" type="button" id="fillDemo">Rellenar con ejemplo</button></div>
+  </form>
+  <div id="created" class="note ok" style="display:none;margin-top:16px;max-width:780px"></div>
+ </div></div>
+</section>
+
+<section class="screen" id="detalle" data-title="Detalle del documento" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="documentos"></nav><div class="main" id="detail"></div></div>
+</section>
+
+<section class="screen" id="plantillas" data-title="Plantillas" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="plantillas"></nav><div class="main">
+  <h2>Plantillas</h2><p class="lead">Los contratos se arman campo por campo en un lienzo. Solo administrador y rector pueden editarlas.</p>
+  <div class="tablebox"><table><thead><tr><th>Nombre</th><th>Hojas</th><th>Campos</th><th>Variables</th><th></th></tr></thead><tbody id="tlist"></tbody></table></div>
+ </div></div>
+</section>
+
+<section class="screen" id="editor" data-title="Editor de plantilla" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="plantillas"></nav><div class="main">
+  <div class="row between"><div><h2>Editor de plantilla</h2><p class="lead" style="margin-bottom:10px">Contrato de matrícula – Colegio · hoja 1 de 3. Arrastra los campos para moverlos.</p></div>
+   <div class="row"><button class="btn ghost" data-go="plantillas">Volver</button><button class="btn" id="saveTpl">Guardar plantilla</button></div></div>
+  <div class="editor">
+   <div class="pal"><h3 style="margin:0">Agregar</h3>
+    <button class="btn ghost small" data-add="text">Texto fijo</button><button class="btn ghost small" data-add="variable">Campo variable</button>
+    <button class="btn ghost small" data-add="signature">Espacio de firma</button><button class="btn ghost small" data-add="image">Imagen</button><button class="btn ghost small" data-add="shape">Figura (línea)</button></div>
+   <div class="pagewrap"><div class="page" id="page"></div></div>
+   <div class="props panel" id="props"></div>
+  </div>
+ </div></div>
+</section>
+
+<section class="screen" id="firmas" data-title="Firmas institucionales" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="firmas"></nav><div class="main">
+  <h2>Firmas institucionales</h2><p class="lead">La firma del rector y del representante legal se guarda una vez y se aplica sola al contrato cuando el acudiente firma.</p>
+  <div class="grid2" id="instCards"></div>
+ </div></div>
+</section>
+
+<section class="screen" id="usuarios" data-title="Usuarios" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="usuarios"></nav><div class="main">
+  <h2>Usuarios</h2><p class="lead">Crea cuentas con su rol. La clave temporal obliga a cambiarla en el primer ingreso.</p>
+  <form id="userForm" class="search" novalidate>
+   <input id="uName" placeholder="Nombre completo" aria-label="Nombre" style="flex:1 1 170px"><input id="uMail" type="email" placeholder="correo@colegio.edu.co" aria-label="Correo" style="flex:1 1 200px">
+   <select id="uRole" aria-label="Rol"><option>Secretaria</option><option>Rector</option><option>Representante Legal</option><option>Docente</option><option>Administrador</option></select>
+   <button class="btn" type="submit">Crear usuario</button></form>
+  <div class="tablebox"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="users"></tbody></table></div>
+ </div></div>
+</section>
+
+<section class="screen" id="ajustes" data-title="Ajustes del colegio" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="ajustes"></nav><div class="main">
+  <h2>Ajustes del colegio</h2><p class="lead">Identidad en los correos y servidor de correo propio del colegio.</p>
+  <div class="form">
+   <h3 class="full" style="margin:0">Identidad</h3>
+   <div class="f"><label for="sName">Nombre del colegio</label><input id="sName" value="Colegio Piloto"></div>
+   <div class="f"><label for="sColor">Color de marca</label><input id="sColor" type="color" value="#0051d5"></div>
+   <div class="f full"><label for="sLogo">Logo (solo PNG)</label><div class="photo" style="margin:0"><div class="avatar" id="logoPrev" style="border-radius:8px">SD</div><input id="sLogo" type="file" accept="image/png"></div><small>Se recorta y se ajusta de tamaño al guardar.</small></div>
+   <h3 class="full" style="margin-bottom:0">Correo saliente (SMTP)</h3>
+   <div class="f"><label for="smHost">Servidor</label><input id="smHost" value="smtp.colegiopiloto.edu.co"></div>
+   <div class="f"><label for="smPort">Puerto</label><input id="smPort" value="587"></div>
+   <div class="f"><label for="smUser">Usuario</label><input id="smUser" value="notificaciones@colegiopiloto.edu.co"></div>
+   <div class="f"><label for="smPass">Clave</label><input id="smPass" type="password" value="••••••••••"><small>Se guarda cifrada; nunca se muestra.</small></div>
+   <div class="f full"><div class="note">La conexión siempre va cifrada (TLS o SSL). No hay opción para desactivarlo.</div></div>
+   <div class="full row"><button class="btn" id="saveSet">Guardar ajustes</button><button class="btn ghost" id="testMail">Enviar correo de prueba</button></div>
+  </div>
+ </div></div>
+</section>
+
+<section class="screen" id="colegios" data-title="Colegios (plataforma)" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="colegios"></nav><div class="main">
+  <h2>Colegios</h2><p class="lead">Vista del dueño de la plataforma. Cada colegio solo ve sus propios datos.</p>
+  <div class="grid4"><div class="stat"><small>Colegios activos</small><strong id="pAct">2</strong></div><div class="stat"><small>Usuarios</small><strong>47</strong></div><div class="stat"><small>Documentos</small><strong>318</strong></div><div class="stat"><small>Completados</small><strong>251</strong></div></div>
+  <form id="schoolForm" class="search" novalidate><input id="scName" placeholder="Nombre del nuevo colegio" aria-label="Nombre del colegio"><button class="btn" type="submit">Crear colegio</button></form>
+  <div class="tablebox"><table><thead><tr><th>Colegio</th><th>Usuarios</th><th>Documentos</th><th>Estado</th><th></th></tr></thead><tbody id="schools"></tbody></table></div>
+ </div></div>
+</section>
+
+<section class="screen" id="perfil" data-title="Mi perfil" data-group="Panel del colegio">
+ <div class="shell"><nav class="side" data-active="perfil"></nav><div class="main">
+  <h2>Mi perfil</h2><p class="lead">Tu foto y tu contraseña.</p>
+  <div class="form"><div class="f full"><label>Foto de perfil</label><div class="photo" style="margin:0"><div class="avatar" id="profAv" style="width:64px;height:64px;font-size:18px">LG</div><input id="photoIn" type="file" accept="image/*"></div><small>Se recorta a un cuadrado automáticamente.</small></div>
+   <h3 class="full" style="margin:6px 0 0">Cambiar contraseña</h3>
+   <div class="f"><label for="pp1">Contraseña actual</label><input id="pp1" type="password"></div><div class="f"><label for="pp2">Nueva contraseña (10+ caracteres)</label><input id="pp2" type="password"></div>
+   <div class="full row"><button class="btn" id="savePw">Cambiar contraseña</button></div></div>
+ </div></div>
+</section>
+
+<!-- ============ PORTAL ACUDIENTE ============ -->
+<section class="screen" id="portal-codigo" data-title="1 · Código" data-group="Portal del acudiente">
+ <div class="center"><form class="card" id="codeForm" novalidate>
+  <div class="brand" style="color:var(--ink);padding-left:0"><i>SD</i> Colegio Piloto</div>
+  <div class="steps"><span class="on">Código</span><span>Datos</span><span>Revisar</span><span>Firma</span></div>
+  <h2>Escribe tu código</h2><p class="lead" style="margin-bottom:8px" id="codeMsg"></p>
+  <div class="codeboxes" id="codeBoxes"></div>
+  <div class="f" id="fCode" style="margin:0"><div class="err" id="codeErr">El código no es correcto. Revisa el correo.</div></div>
+  <div class="row" style="margin-top:12px"><button class="btn" type="submit">Continuar</button><button class="btn ghost small" type="button" id="resend">Reenviar código</button></div>
+  <p class="lead" style="margin:12px 0 0;font-size:12.5px">Demo: el código es <span class="mono">123456</span>. Vence a los pocos minutos y tiene intentos limitados.</p>
+ </form></div>
+</section>
+
+<section class="screen" id="portal-datos" data-title="2 · Datos" data-group="Portal del acudiente">
+ <div class="center"><form class="card wide" id="dataForm" novalidate>
+  <div class="steps"><span class="done">Código</span><span class="on">Datos</span><span>Revisar</span><span>Firma</span></div>
+  <h2>Tus datos y los del estudiante</h2><p class="lead" style="margin-bottom:12px" id="dataLead"></p>
+  <div class="form" style="grid-template-columns:1fr 1fr;max-width:none;gap:10px 12px">
+   <div class="f full" data-f="estudiante"><label for="dEst">Nombre completo del estudiante *</label><input id="dEst"><div class="err">Este dato es obligatorio.</div></div>
+   <div class="f" data-f="ciudad"><label for="dCiu">Ciudad de domicilio *</label><input id="dCiu"><div class="err">Este dato es obligatorio.</div></div>
+   <div class="f" data-f="modalidad"><label for="dMod">Modalidad del servicio *</label><select id="dMod"><option value="">Selecciona</option><option>Presencial</option><option>Semipresencial</option></select><div class="err">Selecciona una opción.</div></div>
+   <h3 class="full" style="margin:4px 0 0" id="gTitle">Acudiente 1</h3>
+   <div class="f full" data-f="nombre"><label for="dNom">Nombre completo *</label><input id="dNom"><div class="err">Este dato es obligatorio.</div></div>
+   <div class="f full" data-f="dir"><label for="dDir">Dirección física *</label><input id="dDir"><div class="err">Este dato es obligatorio.</div></div>
+   <div class="f" data-f="fijo"><label for="dFijo">Teléfono fijo *</label><input id="dFijo" inputmode="tel"><div class="err">Este dato es obligatorio.</div></div>
+   <div class="f" data-f="cel"><label for="dCel">Teléfono celular *</label><input id="dCel" inputmode="tel"><div class="err">Escribe 10 dígitos.</div></div>
+   <div class="f full"><label for="dMail">Correo electrónico</label><input id="dMail" readonly></div>
+  </div>
+  <div class="note warn" id="missing" style="margin-top:12px"></div>
+  <div class="row" style="margin-top:12px"><button class="btn" type="submit">Guardar y revisar contrato</button></div>
+ </form></div>
+</section>
+
+<section class="screen" id="portal-revisar" data-title="3 · Revisar" data-group="Portal del acudiente">
+ <div class="center"><div class="card wide">
+  <div class="steps"><span class="done">Código</span><span class="done">Datos</span><span class="on">Revisar</span><span>Firma</span></div>
+  <h2>Revisa el contrato</h2><p class="lead" style="margin-bottom:10px">Los datos que escribiste aparecen resaltados.</p>
+  <div class="doc" id="docPrev" tabindex="0" aria-label="Contrato"></div>
+  <label class="check"><input type="checkbox" id="terms"><span>Acepto los términos de la firma electrónica y el tratamiento de mis datos personales (versión de términos 1).</span></label>
+  <div class="row"><button class="btn" id="toSign" disabled>Continuar a la firma</button><button class="btn ghost" data-go="portal-datos">Volver a mis datos</button></div>
+ </div></div>
+</section>
+
+<section class="screen" id="portal-firma" data-title="4 · Firma" data-group="Portal del acudiente">
+ <div class="center"><div class="card wide">
+  <div class="steps"><span class="done">Código</span><span class="done">Datos</span><span class="done">Revisar</span><span class="on">Firma</span></div>
+  <h2>Firma el contrato</h2><p class="lead" style="margin-bottom:10px">Dibuja tu firma con el dedo o el mouse.</p>
+  <div class="pad-wrap"><canvas id="pad" aria-label="Espacio para firmar"></canvas><div class="pad-hint" id="padHint">Firma aquí</div></div>
+  <div class="row between" style="margin-top:8px"><span class="lead" style="margin:0;font-size:12.5px">Puedes borrar y firmar de nuevo.</span><button type="button" class="btn ghost small" id="padClear">Borrar firma</button></div>
+  <div class="photo"><div class="avatar" id="phPrev">Foto</div><div><label for="phIn" style="font-size:13px;font-weight:600">Foto del firmante (opcional)</label><br><input id="phIn" type="file" accept="image/*" capture="user"></div></div>
+  <div class="row"><button class="btn sign" id="signBtn" disabled>Firmar y finalizar</button><button class="btn ghost" id="rejBtn">No estoy de acuerdo</button></div>
+ </div></div>
+</section>
+
+<section class="screen" id="portal-listo" data-title="5 · Listo" data-group="Portal del acudiente">
+ <div class="center"><div class="card wide">
+  <div class="note ok" id="doneBox"></div>
+  <p class="lead" style="margin:14px 0" id="doneTxt"></p>
+  <div class="row"><button class="btn" id="dlBtn">Ver y descargar contrato (PDF)</button><button class="btn ghost" data-go="login">Salir</button></div>
+ </div></div>
+</section>
+
+</main></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+var $=function(s,r){return (r||document).querySelector(s)},$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function toast(t){var e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},3300)}
+function now(){var d=new Date(),p=function(n){return ('0'+n).slice(-2)};return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())}
+function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}var o='';for(var k=0;k<4;k++){h=Math.imul(h^(h>>>13),2246822519)>>>0;o+=('00000000'+h.toString(16)).slice(-8)}return o}
+var ST={draft:['Borrador','off'],pending_signatures:['Pendiente de firmas','warn'],completed:['Completado','ok'],rejected:['Rechazado','bad'],cancelled:['Cancelado','off']};
+function pill(s){return '<span class="pill '+ST[s][1]+'">'+ST[s][0]+'</span>'}
+var ROLES={sec:{n:'Laura Gómez',r:'Secretaria',i:'LG'},rec:{n:'Andrés Ríos',r:'Rector',i:'AR'},adm:{n:'Soporte School-Docs',r:'Administrador',i:'SS'},plt:{n:'Dueño de la plataforma',r:'Superusuario',i:'PL'}};
+var NAV={sec:[['inicio','Inicio'],['documentos','Documentos'],['nuevo','Nuevo documento'],['plantillas','Plantillas']],
+ rec:[['inicio','Inicio'],['documentos','Documentos'],['plantillas','Plantillas'],['firmas','Firmas institucionales']],
+ adm:[['inicio','Inicio'],['documentos','Documentos'],['nuevo','Nuevo documento'],['plantillas','Plantillas'],['firmas','Firmas institucionales'],['usuarios','Usuarios'],['ajustes','Ajustes del colegio']],
+ plt:[['colegios','Colegios']]};
+var role='sec',cur=null,portalRole='guardian',photo='',myPhoto='';
+var docs=[
+ {id:14,title:'Contrato 2026 – Samuel Restrepo',tpl:'Colegio',status:'pending_signatures',two:false,mat:'$ 850.000',pen:'$ 720.000',m1:'diana.ortiz@example.com',m2:'',d:{},created:'06/11/2026 09:12',
+  sg:{guardian:null,rector:'auto',legal_rep:'auto'},audit:[['created','Laura Gómez','06/11/2026 09:12'],['sent','Laura Gómez','06/11/2026 09:14'],['portal_link_sent','Laura Gómez','06/11/2026 09:14']]},
+ {id:13,title:'Contrato 2026 – Mariana López',tpl:'Preescolar',status:'completed',two:true,mat:'$ 850.000',pen:'$ 690.000',m1:'carolina.cardona@example.com',m2:'luis.lopez@example.com',d:{estudiante_nombre:'Mariana López Cardona',ciudad_domicilio:'Guarne',modalidad:'Presencial',a1:'Carolina Cardona Ruiz',a1dir:'Cra 50 # 12-30',a1fijo:'6045551234',a1cel:'3104567812'},created:'04/11/2026 10:02',
+  sg:{guardian:'1',guardian2:'1',rector:'1',legal_rep:'1'},audit:[['created','Laura Gómez','04/11/2026 10:02'],['sent','Laura Gómez','04/11/2026 10:05'],['portal_link_sent','Laura Gómez','04/11/2026 10:05'],['signed','Carolina Cardona Ruiz','04/11/2026 18:40'],['signed','Luis López','04/11/2026 19:02'],['completed','Sistema','04/11/2026 19:02'],['downloaded','Laura Gómez','05/11/2026 08:20']]},
+ {id:12,title:'Contrato 2026 – Juan David Mesa',tpl:'Colegio',status:'rejected',two:false,mat:'$ 850.000',pen:'$ 720.000',m1:'jorge.mesa@example.com',m2:'',d:{},created:'03/11/2026 15:30',
+  sg:{guardian:'rej',rector:'auto',legal_rep:'auto'},rej:'El valor de la pensión no corresponde con lo acordado.',audit:[['created','Laura Gómez','03/11/2026 15:30'],['sent','Laura Gómez','03/11/2026 15:33'],['rejected','Jorge Mesa Henao','03/11/2026 20:10']]},
+ {id:11,title:'Contrato 2026 – Isabela Zapata',tpl:'Colegio',status:'draft',two:false,mat:'$ 850.000',pen:'$ 720.000',m1:'paula.velez@example.com',m2:'',d:{},created:'02/11/2026 11:45',sg:{},audit:[['created','Laura Gómez','02/11/2026 11:45']]}];
+var tpls=[{n:'Contrato de matrícula – Colegio',pages:3,campos:96,vars:15},{n:'Contrato de matrícula – Preescolar',pages:3,campos:94,vars:16}];
+var users=[{n:'Laura Gómez',m:'secretaria@colegiopiloto.edu.co',r:'Secretaria',a:true},{n:'Andrés Ríos',m:'rector@colegiopiloto.edu.co',r:'Rector',a:true},{n:'Horacio Vera',m:'legal@colegiopiloto.edu.co',r:'Representante Legal',a:true},{n:'Soporte School-Docs',m:'admin@colegiopiloto.edu.co',r:'Administrador',a:true},{n:'Camila Vélez',m:'camila.velez@colegiopiloto.edu.co',r:'Docente',a:false}];
+var inst={rector:{n:'Andrés Ríos Duque',auto:true,at:'01/10/2026 08:00',sig:true},legal_rep:{n:'Horacio Vera',auto:true,at:'01/10/2026 08:05',sig:true}};
+var schools=[{n:'Colegio Piloto',u:31,d:204,a:true},{n:'Jardín Los Pinos',u:16,d:114,a:true}];
+var SGL={guardian:'Acudiente',guardian2:'Acudiente 2',rector:'Rector',legal_rep:'Representante Legal'};
+var AL={created:'Documento creado',data_updated:'Datos del formulario actualizados',sent:'Enviado a firma',signed:'Firmado',rejected:'Firma rechazada',completed:'Documento completado',cancelled:'Documento cancelado',downloaded:'PDF descargado',portal_link_sent:'Enlace enviado al acudiente'};
+
+/* ---- navegación ---- */
+var screens=$$('.screen'),maps=$('#maps'),groups={};
+screens.forEach(function(s){var g=s.dataset.group;if(!groups[g]){var r=document.createElement('div');r.className='maprow';r.innerHTML='<span>'+g+'</span>';maps.appendChild(r);groups[g]=r}
+ var b=document.createElement('button');b.type='button';b.dataset.go=s.id;b.textContent=s.dataset.title;groups[g].appendChild(b)});
+function buildNav(){$$('.side').forEach(function(n){var h='<div class="brand"><i>SD</i> School-Docs</div>';
+ NAV[role].forEach(function(l){h+='<a role="link" tabindex="0" data-go="'+l[0]+'"'+(l[0]===n.dataset.active?' aria-current="page"':'')+'>'+l[1]+'</a>'});
+ h+='<div class="sep"></div><a role="link" tabindex="0" data-go="perfil"'+(n.dataset.active==='perfil'?' aria-current="page"':'')+'>Mi perfil</a><a role="link" tabindex="0" data-go="login">Cerrar sesión</a>';
+ var av=myPhoto?'<img alt="" src="'+myPhoto+'">':ROLES[role].i;h+='<div class="who"><div class="avatar">'+av+'</div><div>'+ROLES[role].n+'<br><span style="opacity:.7">'+ROLES[role].r+'</span></div></div>';n.innerHTML=h})}
+function go(id,pick){
+ if(id.indexOf('portal')===0&&pick&&pick.indexOf('pending')===0){cur=docs.filter(function(x){return x.status==='pending_signatures'})[0]||docs[0];portalRole=pick==='pending2'?'guardian2':'guardian'}
+ var fn={inicio:rHome,documentos:rList,detalle:rDetail,plantillas:rTpl,editor:rEditor,firmas:rInst,usuarios:rUsers,colegios:rSchools,'portal-codigo':pCode,'portal-datos':pData,'portal-revisar':pReview,'portal-firma':pSign,'portal-listo':pDone,nuevo:rNew}[id];
+ if(id==='portal-codigo'&&!pick){portalRole='guardian';if(!cur||cur.status!=='pending_signatures')cur=docs.filter(function(x){return x.status==='pending_signatures'})[0]||docs[0]}
+ var needDoc=id.indexOf('portal')===0||id==='detalle';if(needDoc&&!cur)cur=docs[0];
+ if(id==='login'){}
+ buildNav();if(fn)fn();
+ screens.forEach(function(s){s.classList.toggle('on',s.id===id)});
+ $$('button',maps).forEach(function(b){b.setAttribute('aria-current',b.dataset.go===id?'true':'false')});
+ if(location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0})}
+document.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t){e.preventDefault();go(t.dataset.go,t.dataset.doc)}
+ var o=e.target.closest('[data-open]');if(o){cur=docs.filter(function(x){return x.id==+o.dataset.open})[0];go('detalle')}});
+document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches('.side a')){e.preventDefault();go(e.target.dataset.go)}if(e.key==='Escape')$('#modal').classList.remove('on')});
+window.addEventListener('hashchange',function(){var id=location.hash.slice(1);if($('#'+id)&&$('#'+id).classList.contains('screen'))go(id)});
+
+/* ---- login ---- */
+$$('.chips button[data-role]').forEach(function(b){b.addEventListener('click',function(){role=b.dataset.role;$$('.chips button[data-role]').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+ $('#email').value={sec:'secretaria',rec:'rector',adm:'admin',plt:'plataforma'}[role]+'@colegiopiloto.edu.co'})});
+$('#loginForm').addEventListener('submit',function(e){e.preventDefault();var a=/^\S+@\S+\.\S+$/.test($('#email').value),b=$('#pass').value.length>0;
+ $('#fEmail').classList.toggle('bad',!a);$('#fPass').classList.toggle('bad',!b);if(a&&b)go(role==='plt'?'colegios':'inicio')});
+$('#pwForced').addEventListener('submit',function(e){e.preventDefault();var a=$('#pwA').value.length>0,b=$('#pwB').value.length>=10,c=$('#pwB').value===$('#pwC').value;
+ $('[data-f=a]',this).classList.toggle('bad',!a);$('[data-f=b]',this).classList.toggle('bad',!b);$('[data-f=c]',this).classList.toggle('bad',!c);
+ if(a&&b&&c){toast('Contraseña cambiada. Ya puedes usar el sistema.');go('inicio')}});
+
+/* ---- inicio ---- */
+function cnt(s){return docs.filter(function(d){return d.status===s}).length}
+function rHome(){$('#stats').innerHTML='<div class="stat"><small>Documentos</small><strong>'+docs.length+'</strong></div><div class="stat"><small>Pendientes de firmas</small><strong>'+cnt('pending_signatures')+'</strong></div><div class="stat"><small>Completados</small><strong>'+cnt('completed')+'</strong></div><div class="stat"><small>Rechazados</small><strong>'+cnt('rejected')+'</strong></div>';
+ var w=[['L',3],['M',5],['X',2],['J',6],['V',4],['S',1],['D',0]],mx=6;$('#weekBars').innerHTML=w.map(function(x){return '<div><span>'+x[1]+'</span><i style="height:'+(x[1]/mx*88)+'px"></i>'+x[0]+'</div>'}).join('');
+ $('#recent').innerHTML=docs.slice(0,4).map(function(d){return '<li><div><a href="#detalle" data-open="'+d.id+'" style="color:var(--btn);font-weight:600;cursor:pointer">'+esc(d.title)+'</a> '+pill(d.status)+'<small>'+d.created+'</small></div></li>'}).join('')}
+/* ---- lista ---- */
+function sgSummary(d){var k=Object.keys(d.sg||{});if(!k.length)return '—';var ok=k.filter(function(x){return d.sg[x]&&d.sg[x]!=='rej'}).length;return ok+' de '+(d.two?4:3)}
+function rList(){var q=$('#q').value.trim().toLowerCase(),s=$('#fs').value,t=$('#ft').value;
+ var r=docs.filter(function(d){return (!s||d.status===s)&&(!t||d.tpl===t)&&(!q||d.title.toLowerCase().indexOf(q)>-1)});
+ $('#dlist').innerHTML=r.map(function(d){return '<tr class="click" data-open="'+d.id+'"><td class="mono">'+d.id+'</td><td>'+esc(d.title)+'</td><td>'+d.tpl+'</td><td>'+pill(d.status)+'</td><td>'+sgSummary(d)+'</td><td class="mono">'+d.created.slice(0,10)+'</td></tr>'}).join('');
+ $('#dempty').style.display=r.length?'none':'block'}
+['q','fs','ft'].forEach(function(i){$('#'+i).addEventListener('input',rList)});
+/* ---- nuevo ---- */
+function rNew(){$('#nM2').style.display=$('#two').checked?'':'none'}
+$('#two').addEventListener('change',rNew);
+$('#fillDemo').addEventListener('click',function(){$('#title').value='Contrato 2026 – Nicolás Arboleda';$('#mat').value='$ 850.000';$('#pen').value='$ 720.000';$('#m1').value='sandra.cano@example.com';$('#m2').value='pedro.arboleda@example.com'});
+function chk(box,ok){$(box).classList.toggle('bad',!ok);return ok}
+function mkDoc(send){var two=$('#two').checked;
+ var ok=[chk('#nTitle',$('#title').value.trim().length>2)];
+ if(send){ok.push(chk('#nMat',$('#mat').value.trim().length>0),chk('#nPen',$('#pen').value.trim().length>0),chk('#nM1',/^\S+@\S+\.\S+$/.test($('#m1').value)));if(two)ok.push(chk('#nM2',/^\S+@\S+\.\S+$/.test($('#m2').value)))}
+ if(ok.indexOf(false)>-1){toast('Revisa los campos marcados en rojo.');return}
+ var id=docs.length?docs[0].id+1:1,ts=now(),d={id:id,title:$('#title').value.trim(),tpl:$('#tpl').selectedIndex?'Preescolar':'Colegio',status:send?'pending_signatures':'draft',two:two,mat:$('#mat').value,pen:$('#pen').value,m1:$('#m1').value,m2:two?$('#m2').value:'',d:{},created:ts,sg:{},audit:[['created',ROLES[role].n,ts]]};
+ if(send)sendDoc(d);docs.unshift(d);cur=d;
+ var b=$('#created');b.style.display='block';
+ b.innerHTML=send?'<strong>Documento #'+id+' enviado a firma.</strong><div>Se envió el enlace a '+esc(d.m1)+(two?' y a '+esc(d.m2):'')+'. Las firmas del rector y del representante legal se aplican solas al terminar.</div><div class="row" style="margin-top:10px"><button class="btn small" data-go="detalle">Ver documento</button><button class="btn small sign" data-go="portal-codigo">Abrir como acudiente (demo)</button></div>':'<strong>Borrador #'+id+' guardado.</strong> Lo envías a firma cuando esté listo. <button class="btn small" data-go="detalle">Ver documento</button>';
+ $('#newForm').reset();rNew()}
+function sendDoc(d){var ts=now();d.sg={guardian:null,rector:'auto',legal_rep:'auto'};if(d.two)d.sg.guardian2=null;d.audit.push(['sent',ROLES[role].n,ts],['portal_link_sent',ROLES[role].n,ts])}
+$('#newForm').addEventListener('submit',function(e){e.preventDefault();mkDoc(true)});$('#draftBtn').addEventListener('click',function(){mkDoc(false)});
+/* ---- detalle ---- */
+function chain(d){var prev='';return d.audit.map(function(a){prev=hash(prev+a.join('|'));return prev})}
+function rDetail(){var d=cur,ch=chain(d),sg=d.sg||{};
+ var rows=['guardian','guardian2','rector','legal_rep'].filter(function(k){return k in sg}).map(function(k){var v=sg[k],auto=(k==='rector'||k==='legal_rep');
+  var st=v==='rej'?'<span class="pill bad">Rechazó</span>':v?'<span class="pill ok">Firmado</span>':(auto?'<span class="pill info">Firma automática al final</span>':'<span class="pill warn">Pendiente</span>');
+  return '<tr><td>'+SGL[k]+'</td><td>'+st+'</td></tr>'}).join('')||'<tr><td colspan="2" style="color:var(--muted)">Aún no se envió a firma.</td></tr>';
+ var acts='';
+ if(d.status==='draft')acts+='<button class="btn" id="aSend">Enviar a firma</button>';
+ if(d.status==='pending_signatures'){acts+='<button class="btn sign" data-go="portal-codigo" data-doc="pending">Abrir enlace del acudiente (demo)</button>'+(d.two?'<button class="btn ghost" data-go="portal-codigo" data-doc="pending2">Enlace del acudiente 2</button>':'')+'<button class="btn ghost" id="aResend">Reenviar enlace</button><button class="btn ghost" id="aCancel">Cancelar documento</button>'}
+ if(d.status==='completed')acts+='<button class="btn" id="aPdf">Descargar PDF</button><button class="btn ghost" id="aZip">Descargar expediente (ZIP)</button>';
+ $('#detail').innerHTML='<div class="row between"><div><h2>'+esc(d.title)+'</h2><p class="lead">Documento #'+d.id+' · Plantilla '+d.tpl+' · creado '+d.created+'</p></div>'+pill(d.status)+'</div>'
+ +(d.status==='rejected'?'<div class="note warn" style="margin-bottom:14px"><strong>Motivo del rechazo:</strong> '+esc(d.rej||'')+'</div>':'')
+ +'<div class="grid2"><div><h3 style="margin-top:0">Firmantes</h3><div class="tablebox"><table><thead><tr><th>Rol</th><th>Estado</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+ +'<h3>Datos de la secretaría</h3><dl><dt>Matrícula</dt><dd>'+esc(d.mat)+'</dd><dt>Pensión mensual</dt><dd>'+esc(d.pen)+'</dd><dt>Acudiente 1</dt><dd>'+esc(d.m1)+'</dd>'+(d.two?'<dt>Acudiente 2</dt><dd>'+esc(d.m2)+'</dd>':'')+'</dl>'
+ +'<div class="row">'+acts+'<button class="btn ghost" data-go="documentos">Volver</button></div></div>'
+ +'<div class="panel"><div class="row between"><h3 style="margin:0">Trazabilidad</h3><span class="pill ok">Cadena íntegra</span></div><p class="lead" style="font-size:12.5px;margin:4px 0 10px">Cada evento guarda una huella que depende de la anterior. Si alguien altera uno, la cadena se rompe.</p><ul class="timeline">'
+ +d.audit.map(function(a,i){return '<li><div>'+AL[a[0]]+' · '+esc(a[1])+'<small>'+a[2]+' · '+ch[i].slice(0,16)+'…</small></div></li>'}).join('')+'</ul></div></div>';
+ var bind=function(i,f){var b=$('#'+i);if(b)b.addEventListener('click',f)};
+ bind('aSend',function(){if(!d.m1){d.m1='acudiente@example.com'}sendDoc(d);d.status='pending_signatures';toast('Enviado a firma. Enlace enviado a '+d.m1);rDetail()});
+ bind('aResend',function(){d.audit.push(['portal_link_sent',ROLES[role].n,now()]);toast('Enlace reenviado a '+d.m1);rDetail()});
+ bind('aCancel',function(){d.status='cancelled';d.audit.push(['cancelled',ROLES[role].n,now()]);toast('Documento cancelado');rDetail()});
+ bind('aPdf',function(){d.audit.push(['downloaded',ROLES[role].n,now()]);preview(d)});
+ bind('aZip',function(){d.audit.push(['downloaded',ROLES[role].n,now()]);toast('Se descargaría expediente_'+d.id+'.zip (contrato + PDF de trazabilidad)');rDetail()})}
+/* ---- plantillas / editor ---- */
+function rTpl(){$('#tlist').innerHTML=tpls.map(function(t,i){return '<tr><td>'+t.n+'</td><td>'+t.pages+'</td><td>'+t.campos+'</td><td>'+t.vars+'</td><td>'+(role==='sec'?'<span class="pill off">Solo lectura</span>':'<button class="btn small" data-go="editor">Editar</button> <button class="btn ghost small" data-dup="'+i+'">Duplicar</button>')+'</td></tr>'}).join('')}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-dup]');if(b){var t=tpls[+b.dataset.dup];tpls.push({n:t.n+' (copia)',pages:t.pages,campos:t.campos,vars:t.vars});rTpl();toast('Plantilla duplicada')}});
+var F=[{t:'text',x:150,y:14,w:160,h:12,txt:'COLEGIO PILOTO',z:1},{t:'text',x:100,y:30,w:260,h:12,txt:'CONTRATO DE MATRÍCULA Y SERVICIOS EDUCATIVOS – 2026',z:2},
+ {t:'text',x:30,y:60,w:400,h:44,txt:'Entre los suscritos, el representante legal del colegio y',z:3},{t:'variable',x:30,y:104,w:150,h:11,txt:'{{acudiente1_nombre}}',z:4},{t:'variable',x:190,y:104,w:150,h:11,txt:'{{estudiante_nombre}}',z:5},
+ {t:'text',x:30,y:130,w:400,h:60,txt:'se celebra el presente contrato, que se rige por las siguientes cláusulas: PRIMERA. OBJETO. El colegio se obliga a prestar el servicio educativo al estudiante…',z:6},
+ {t:'variable',x:30,y:200,w:130,h:11,txt:'{{matricula_valor}}',z:7},{t:'variable',x:190,y:200,w:130,h:11,txt:'{{pension_valor}}',z:8},{t:'shape',x:30,y:330,w:400,h:1.5,txt:'',z:9},
+ {t:'signature',x:30,y:420,w:120,h:36,txt:'Acudiente 1',z:10},{t:'signature',x:170,y:420,w:120,h:36,txt:'Acudiente 2',z:11},{t:'signature',x:30,y:490,w:120,h:36,txt:'Rector',z:12},{t:'signature',x:170,y:490,w:120,h:36,txt:'Representante legal',z:13}];
+var selF=null;
+var CL={text:'',variable:'var',signature:'sig',image:'img',shape:'shp'},TL={text:'Texto fijo',variable:'Campo variable',signature:'Espacio de firma',image:'Imagen',shape:'Figura'};
+function rEditor(){var pg=$('#page');pg.innerHTML='<div style="position:absolute;inset:0 0 auto 0;height:44px;background:linear-gradient(#E4EAF3,#fff);display:grid;place-items:start end;padding:3px 8px;font-size:7px;color:#8693A8">Membrete del colegio</div>';
+ F.forEach(function(f,i){var d=document.createElement('div');d.className='fld '+CL[f.t]+(selF===i?' sel':'');d.style.cssText='left:'+f.x+'px;top:'+f.y+'px;width:'+f.w+'px;height:'+f.h+'px;z-index:'+(f.z+1);
+  d.textContent=f.t==='image'?'Imagen':f.txt;d.dataset.i=i;if(f.t==='signature'){d.style.alignItems='flex-end'}pg.appendChild(d)});rProps()}
+var drag=null;
+$('#page').addEventListener('pointerdown',function(e){var el=e.target.closest('.fld');if(!el)return;var i=+el.dataset.i;selF=i;drag={i:i,sx:e.clientX,sy:e.clientY,ox:F[i].x,oy:F[i].y};el.setPointerCapture(e.pointerId);rEditor()});
+$('#page').addEventListener('pointermove',function(e){if(!drag)return;var f=F[drag.i];f.x=Math.max(0,Math.min(459-f.w,Math.round(drag.ox+e.clientX-drag.sx)));f.y=Math.max(0,Math.min(594-f.h,Math.round(drag.oy+e.clientY-drag.sy)));var el=$('.fld[data-i="'+drag.i+'"]');if(el){el.style.left=f.x+'px';el.style.top=f.y+'px'}});
+$('#page').addEventListener('pointerup',function(){if(drag){drag=null;rProps()}});
+function rProps(){var p=$('#props');if(selF===null||!F[selF]){p.innerHTML='<h3 style="margin-top:0">Propiedades</h3><p class="lead" style="font-size:13px;margin:0">Toca un campo del lienzo para ver y editar sus propiedades.</p>';return}
+ var f=F[selF];p.innerHTML='<h3 style="margin-top:0">'+TL[f.t]+'</h3>'+(f.t==='text'||f.t==='variable'||f.t==='signature'?'<div class="f"><label for="pT">Contenido / etiqueta</label><input id="pT" value="'+esc(f.txt)+'"></div>':'')
+ +'<div class="row" style="gap:6px"><div class="f" style="flex:1"><label for="pX">X</label><input id="pX" type="number" value="'+f.x+'"></div><div class="f" style="flex:1"><label for="pY">Y</label><input id="pY" type="number" value="'+f.y+'"></div></div>'
+ +'<div class="row" style="gap:6px"><div class="f" style="flex:1"><label for="pW">Ancho</label><input id="pW" type="number" value="'+f.w+'"></div><div class="f" style="flex:1"><label for="pH">Alto</label><input id="pH" type="number" value="'+f.h+'"></div></div>'
+ +'<div class="row" style="gap:6px"><button class="btn ghost small" id="zF">Traer al frente</button><button class="btn ghost small" id="zB">Enviar atrás</button></div><p style="margin:10px 0 0"><button class="btn danger small" id="delF">Eliminar campo</button></p>';
+ [['pX','x'],['pY','y'],['pW','w'],['pH','h']].forEach(function(a){$('#'+a[0]).addEventListener('change',function(){f[a[1]]=+this.value;rEditor()})});var t=$('#pT');if(t)t.addEventListener('input',function(){f.txt=this.value;var el=$('.fld[data-i="'+selF+'"]');if(el)el.textContent=f.txt});
+ $('#zF').addEventListener('click',function(){f.z=Math.max.apply(null,F.map(function(x){return x.z}))+1;rEditor();toast('Campo al frente')});$('#zB').addEventListener('click',function(){f.z=Math.min.apply(null,F.map(function(x){return x.z}))-1;rEditor();toast('Campo enviado atrás')});
+ $('#delF').addEventListener('click',function(){F.splice(selF,1);selF=null;rEditor()})}
+$$('[data-add]').forEach(function(b){b.addEventListener('click',function(){var t=b.dataset.add,z=Math.max.apply(null,F.map(function(x){return x.z}))+1;
+ F.push({t:t,x:40,y:240,w:t==='signature'?120:t==='shape'?200:150,h:t==='signature'?36:t==='shape'?1.5:t==='image'?40:12,txt:t==='variable'?'{{nuevo_dato}}':t==='text'?'Texto nuevo':t==='signature'?'Firmante':'',z:z});selF=F.length-1;rEditor()})});
+$('#saveTpl').addEventListener('click',function(){toast('Plantilla guardada. Queda registrada en la trazabilidad.')});
+/* ---- firmas institucionales ---- */
+function rInst(){$('#instCards').innerHTML=Object.keys(inst).map(function(k){var s=inst[k];return '<div class="panel"><h3 style="margin-top:0">'+SGL[k]+'</h3><div><strong>'+esc(s.n)+'</strong></div><div class="sigprev"><svg width="150" height="46" viewBox="0 0 150 46"><path d="M6 32 C18 6 26 6 30 26 S44 42 52 20 S70 6 78 30 S100 40 108 18 S128 10 144 30" fill="none" stroke="#0B1B3A" stroke-width="2.2" stroke-linecap="round"/></svg></div>'
+ +'<p class="lead" style="font-size:12.5px;margin:0 0 8px">Autorizada el '+s.at+'</p><label class="switch"><input type="checkbox" data-auto="'+k+'" '+(s.auto?'checked':'')+'> Aplicar automáticamente a cada contrato</label><p style="margin:10px 0 0"><button class="btn ghost small" data-renew="'+k+'">Reemplazar firma</button></p></div>'}).join('')}
+document.addEventListener('change',function(e){var a=e.target.dataset&&e.target.dataset.auto;if(a){inst[a].auto=e.target.checked;toast(e.target.checked?'Se aplicará automáticamente':'Ahora la firmará de forma manual')}});
+document.addEventListener('click',function(e){var r=e.target.closest('[data-renew]');if(r){inst[r.dataset.renew].at=now();rInst();toast('Firma guardada para uso automático')}});
+/* ---- usuarios ---- */
+function rUsers(){$('#users').innerHTML=users.map(function(u,i){return '<tr><td>'+esc(u.n)+'</td><td class="mono">'+esc(u.m)+'</td><td>'+u.r+'</td><td><span class="pill '+(u.a?'ok':'off')+'">'+(u.a?'Activo':'Inactivo')+'</span></td><td><button class="btn ghost small" data-tg="'+i+'">'+(u.a?'Desactivar':'Activar')+'</button></td></tr>'}).join('')}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-tg]');if(b){users[+b.dataset.tg].a=!users[+b.dataset.tg].a;rUsers()}});
+$('#userForm').addEventListener('submit',function(e){e.preventDefault();var n=$('#uName').value.trim(),m=$('#uMail').value.trim();if(n.length<3||!/^\S+@\S+\.\S+$/.test(m)){toast('Escribe un nombre y un correo válidos.');return}
+ users.push({n:n,m:m,r:$('#uRole').value,a:true});$('#uName').value='';$('#uMail').value='';rUsers();toast('Usuario creado con clave temporal. Deberá cambiarla al ingresar.')});
+/* ---- ajustes / plataforma / perfil ---- */
+$('#saveSet').addEventListener('click',function(){toast('Ajustes guardados')});$('#testMail').addEventListener('click',function(){toast('Correo de prueba enviado a tu cuenta')});
+function readImg(inp,cb){var f=inp.files&&inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){cb(r.result)};r.readAsDataURL(f)}
+$('#sLogo').addEventListener('change',function(){readImg(this,function(u){$('#logoPrev').innerHTML='<img alt="Logo" src="'+u+'">'})});
+$('#photoIn').addEventListener('change',function(){readImg(this,function(u){myPhoto=u;$('#profAv').innerHTML='<img alt="" src="'+u+'">';buildNav();toast('Foto actualizada')})});
+$('#savePw').addEventListener('click',function(){if($('#pp1').value&&$('#pp2').value.length>=10){toast('Contraseña cambiada');$('#pp1').value=$('#pp2').value=''}else toast('La nueva contraseña debe tener al menos 10 caracteres.')});
+function rSchools(){$('#schools').innerHTML=schools.map(function(s,i){return '<tr><td>'+esc(s.n)+'</td><td>'+s.u+'</td><td>'+s.d+'</td><td><span class="pill '+(s.a?'ok':'off')+'">'+(s.a?'Activo':'Inactivo')+'</span></td><td><button class="btn ghost small" data-sc="'+i+'">'+(s.a?'Desactivar':'Activar')+'</button></td></tr>'}).join('');$('#pAct').textContent=schools.filter(function(s){return s.a}).length}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-sc]');if(b){schools[+b.dataset.sc].a=!schools[+b.dataset.sc].a;rSchools()}});
+$('#schoolForm').addEventListener('submit',function(e){e.preventDefault();var n=$('#scName').value.trim();if(n.length<3){toast('Escribe el nombre del colegio.');return}schools.push({n:n,u:0,d:0,a:true});$('#scName').value='';rSchools();toast('Colegio creado')});
+/* ---- portal ---- */
+function pCode(){var mail=portalRole==='guardian2'?cur.m2:cur.m1,m=mail.replace(/^(.{2}).*(@.*)$/,'$1***$2');
+ $('#codeMsg').textContent='Enviamos un código de 6 dígitos a '+m+'. Escríbelo para ver tu contrato.';
+ var b=$('#codeBoxes');b.innerHTML='';for(var i=0;i<6;i++){var x=document.createElement('input');x.inputMode='numeric';x.maxLength=1;x.setAttribute('aria-label','Dígito '+(i+1));b.appendChild(x)}
+ $$('input',b).forEach(function(x,i,a){x.addEventListener('input',function(){x.value=x.value.replace(/\D/g,'');if(x.value&&a[i+1])a[i+1].focus()});x.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!x.value&&a[i-1])a[i-1].focus()})});
+ $('#fCode').classList.remove('bad')}
+$('#codeForm').addEventListener('submit',function(e){e.preventDefault();var v=$$('#codeBoxes input').map(function(x){return x.value}).join('');
+ if(v==='123456'){go(portalRole==='guardian2'?'portal-revisar':'portal-datos')}else $('#fCode').classList.add('bad')});
+$('#resend').addEventListener('click',function(){toast('Te enviamos un código nuevo')});
+var REQ=[['dEst','estudiante'],['dCiu','ciudad'],['dMod','modalidad'],['dNom','nombre'],['dDir','dir'],['dFijo','fijo'],['dCel','cel']];
+function pData(){var g2=portalRole==='guardian2';$('#gTitle').textContent=g2?'Acudiente 2':'Acudiente 1';$('#dMail').value=g2?cur.m2:cur.m1;
+ $('#dataLead').textContent=cur.title+'. Estos datos se escriben en el contrato; los valores económicos ya los puso la secretaría.';
+ $$('#dataForm .f').forEach(function(f){f.classList.remove('bad')});miss()}
+function miss(){var n=REQ.filter(function(r){return !$('#'+r[0]).value.trim()}).length;$('#missing').className='note '+(n?'warn':'ok');$('#missing').textContent=n?'Faltan '+n+' datos obligatorios para completar el contrato.':'Datos completos.'}
+REQ.forEach(function(r){$('#'+r[0]).addEventListener('input',miss)});
+$('#dataForm').addEventListener('submit',function(e){e.preventDefault();var bad=0;REQ.forEach(function(r){var v=$('#'+r[0]).value.trim(),ok=!!v&&(r[1]!=='cel'||/^\d{10}$/.test(v));$('[data-f='+r[1]+']',$('#dataForm')).classList.toggle('bad',!ok);if(!ok)bad++});
+ if(bad){toast('Corrige los campos en rojo.');return}
+ cur.d={estudiante_nombre:$('#dEst').value,ciudad_domicilio:$('#dCiu').value,modalidad:$('#dMod').value,a1:$('#dNom').value,a1dir:$('#dDir').value,a1fijo:$('#dFijo').value,a1cel:$('#dCel').value};
+ cur.audit.push(['data_updated',cur.d.a1,now()]);go('portal-revisar')});
+function docHtml(d,sigs){var v=function(x,ph){return '<span class="v">'+esc(x||ph)+'</span>'},D=d.d||{};
+ return '<h4>COLEGIO PILOTO</h4><p class="sub">CONTRATO DE MATRÍCULA Y SERVICIOS EDUCATIVOS – 2026</p>'
+ +'<p>Entre los suscritos, el representante legal del colegio y '+v(D.a1,'[nombre del acudiente]')+(d.two?' y '+v(D.a2||'Acudiente 2','')+'':'')+', mayor(es) de edad, domiciliado(s) en '+v(D.ciudad_domicilio,'[ciudad]')+', obrando como acudiente(s) del estudiante '+v(D.estudiante_nombre,'[estudiante]')+', se celebra el presente contrato.</p>'
+ +'<p><b>PRIMERA. OBJETO.</b> El colegio prestará el servicio educativo en la modalidad '+v(D.modalidad,'[modalidad]')+'.</p>'
+ +'<p><b>SEGUNDA. VALOR.</b> Matrícula: '+v(d.mat,'')+'. Pensión mensual: '+v(d.pen,'')+'.</p>'
+ +'<p><b>TERCERA. OBLIGACIONES.</b> El acudiente se compromete a cumplir el manual de convivencia y los reglamentos del colegio.</p>'
+ +'<p style="margin-top:14px"><b>Acudiente 1</b><br>'+esc(D.a1||'')+'<br>Dirección: '+esc(D.a1dir||'')+' · Cel. '+esc(D.a1cel||'')+'<br>'+(sigs&&sigs.g1?'<span class="sg"><img alt="Firma" src="'+sigs.g1+'"></span>':'<span class="sg"></span>')+'</p>'
+ +(d.two?'<p><b>Acudiente 2</b><br>'+(sigs&&sigs.g2?'<span class="sg"><img alt="Firma" src="'+sigs.g2+'"></span>':'<span class="sg"></span>')+'</p>':'')
+ +'<p><b>Rector</b> · <b>Representante legal</b><br><span class="sg">'+(sigs&&sigs.inst?'<svg width="110" height="34" viewBox="0 0 150 46"><path d="M6 32 C18 6 26 6 30 26 S44 42 52 20 S70 6 78 30 S100 40 108 18 S128 10 144 30" fill="none" stroke="#0B1B3A" stroke-width="2.4"/></svg>':'')+'</span></p>'}
+function pReview(){$('#docPrev').innerHTML=docHtml(cur);$('#terms').checked=false;$('#toSign').disabled=true}
+$('#terms').addEventListener('change',function(){$('#toSign').disabled=!this.checked});$('#toSign').addEventListener('click',function(){go('portal-firma')});
+var pad=$('#pad'),ctx=pad.getContext('2d'),drawing=false,last=null,signed=false;
+function sizePad(){var r=pad.getBoundingClientRect(),d=window.devicePixelRatio||1;if(!r.width)return;pad.width=Math.round(r.width*d);pad.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);ctx.lineWidth=2.4;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0B1B3A'}
+function pt(e){var r=pad.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+pad.addEventListener('pointerdown',function(e){drawing=true;last=pt(e);pad.setPointerCapture(e.pointerId);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(last.x+.1,last.y+.1);ctx.stroke()});
+pad.addEventListener('pointermove',function(e){if(!drawing)return;var p=pt(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;if(!signed){signed=true;$('#padHint').style.display='none';$('#signBtn').disabled=false}});
+['pointerup','pointercancel'].forEach(function(n){pad.addEventListener(n,function(){drawing=false})});
+function clearPad(){var d=window.devicePixelRatio||1;ctx.clearRect(0,0,pad.width/d,pad.height/d);signed=false;$('#padHint').style.display='grid';$('#signBtn').disabled=true}
+$('#padClear').addEventListener('click',clearPad);
+function pSign(){setTimeout(function(){sizePad();clearPad()},0);$('#phPrev').textContent='Foto';photo=''}
+$('#phIn').addEventListener('change',function(){readImg(this,function(u){photo=u;$('#phPrev').innerHTML='<img alt="" src="'+u+'">'})});
+$('#signBtn').addEventListener('click',function(){var img=pad.toDataURL('image/png'),k=portalRole,who=(cur.d&&cur.d.a1)||(k==='guardian2'?'Acudiente 2':'Acudiente');
+ cur.sg=cur.sg||{};cur.sg[k]='1';cur['img_'+k]=img;cur.audit.push(['signed',who,now()]);
+ var all=cur.sg.guardian&&(!cur.two||cur.sg.guardian2)&&cur.sg.guardian!=='rej';
+ if(all){cur.sg.rector='1';cur.sg.legal_rep='1';cur.status='completed';cur.audit.push(['completed','Sistema',now()])}
+ go('portal-listo')});
+$('#rejBtn').addEventListener('click',function(){$('#sheet').innerHTML='<h2 style="margin:0 0 6px">No estoy de acuerdo</h2><p class="lead">Cuéntale al colegio qué debe corregirse. El documento queda rechazado y la secretaría lo revisa.</p><div class="f"><label for="rr">Motivo</label><textarea id="rr" rows="4"></textarea></div><div class="row" style="margin-top:12px"><button class="btn danger" id="rrOk">Rechazar contrato</button><button class="btn ghost" id="rrNo">Cancelar</button></div>';
+ $('#modal').classList.add('on');$('#rrNo').onclick=function(){$('#modal').classList.remove('on')};
+ $('#rrOk').onclick=function(){var t=$('#rr').value.trim();if(!t){toast('Escribe el motivo.');return}cur.status='rejected';cur.rej=t;cur.sg=cur.sg||{};cur.sg[portalRole]='rej';cur.audit.push(['rejected',(cur.d&&cur.d.a1)||'Acudiente',now()]);$('#modal').classList.remove('on');go('portal-listo')}});
+function pDone(){var ok=cur.status==='completed',rej=cur.status==='rejected';
+ $('#doneBox').className='note '+(rej?'warn':'ok');
+ $('#doneBox').innerHTML=rej?'<strong style="font-size:17px">Contrato rechazado</strong><div>La secretaría recibió tu motivo.</div>':ok?'<strong style="font-size:17px">Contrato completado</strong><div>Firmaron todas las partes. Las firmas del colegio se aplicaron automáticamente.</div>':'<strong style="font-size:17px">Tu firma quedó registrada</strong><div>Falta la firma del acudiente 2 para completar el contrato.</div>';
+ $('#doneTxt').textContent=ok?'Ya puedes ver y descargar tu copia del contrato en PDF.':rej?'Si cambian las condiciones, recibirás un nuevo enlace.':'Cuando la otra persona firme, el contrato se completa solo.';
+ $('#dlBtn').style.display=ok?'':'none'}
+$('#dlBtn').addEventListener('click',function(){preview(cur)});
+function preview(d){$('#sheet').innerHTML='<div class="doc" style="max-height:none">'+docHtml(d,{g1:d.img_guardian,g2:d.img_guardian2,inst:d.status==='completed'})+'</div><div class="row" style="margin-top:12px;justify-content:flex-end"><span class="lead" style="margin:0;font-size:12.5px">Vista previa: la versión funcional descarga el PDF.</span><button class="btn" id="cl">Cerrar</button></div>';
+ $('#modal').classList.add('on');$('#cl').onclick=function(){$('#modal').classList.remove('on')}}
+$('#modal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('on')});
+window.addEventListener('resize',function(){if($('#portal-firma').classList.contains('on')&&!signed)sizePad()});
+var st=location.hash.slice(1);go($('#'+st)&&$('#'+st).classList.contains('screen')?st:'login');
+})();
+</script>
+</body>
+</html>
